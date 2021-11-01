@@ -83,7 +83,7 @@ const startServer = () => {
       buyObj['price'] = price;
       coinbaseStore.buyer.push(buyObj);
     });
-
+    coinbaseStore.buyer.sort((a, b) => a.price - b.price);
     setTimeout(() => {
       buy();
     }, 5000);
@@ -95,10 +95,8 @@ const startServer = () => {
 
   wss.on('connection', (ws) => {
     //connection is up, let's add a simple simple event
-    console.log('hi');
     ws.on('message', (message) => {
       //log the received message and send it back to the client
-      console.log('received: %s', message);
       ws.send(`Hello, you sent -> ${message}`);
     });
 
@@ -106,13 +104,15 @@ const startServer = () => {
     ws.send('Hi there, I am a WebSocket server :)');
     ws.send(JSON.stringify(coinbaseStore));
     var broadcast = function () {
-      var json = JSON.stringify(coinbaseStore);
+      if (coinbaseStore.buyer.length === 8) {
+        var json = JSON.stringify(coinbaseStore);
 
-      // wss.clients is an array of all connected clients
-      wss.clients.forEach(function each(client) {
-        client.send(json);
-        console.log(`sent:${json}`);
-      });
+        // wss.clients is an array of all connected clients
+        wss.clients.forEach(function each(client) {
+          client.send(json);
+          console.log(`sent:${json}`);
+        });
+      }
       setTimeout(() => {
         broadcast();
       }, 5000);
