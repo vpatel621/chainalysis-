@@ -22,14 +22,33 @@ const startServer = () => {
   };
   app.use(cors(corsOptions));
 
-  const coinbaseStore = { buyer: [], seller: [] };
+  const coinbaseStore = { buyer: [] };
   async function buy() {
+    coinbaseStore.buyer = [];
+
+    const sellPurchase = await Promise.all([
+      axios.get('https://api.coinbase.com/v2/prices/BTC-USD/sell'),
+      axios.get('https://api.coinbase.com/v2/prices/ETH-USD/sell'),
+    ]);
+    const res = await Promise.all(sellPurchase.map((r) => r.data));
+
+    res.forEach((crypto) => {
+      let price = crypto.data.amount;
+      let curr = crypto.data.base;
+      let obj = {};
+      obj.type = 'seller';
+      obj.source = 'coinbase';
+      obj['name'] = curr;
+      obj['price'] = price;
+      coinbaseStore.buyer.push(obj);
+    });
+
     const purchase = await Promise.all([
       axios.get('https://api.coinbase.com/v2/prices/BTC-USD/buy'),
       axios.get('https://api.coinbase.com/v2/prices/ETH-USD/buy'),
     ]);
     const data = await Promise.all(purchase.map((r) => r.data));
-    coinbaseStore.buyer = [];
+
     data.forEach((crypto) => {
       let price = crypto.data.amount;
       let curr = crypto.data.base;
@@ -41,35 +60,36 @@ const startServer = () => {
       coinbaseStore.buyer.push(obj);
     });
 
-    setTimeout(() => {
-      buy();
-    }, 20000);
-  }
-  async function sell() {
-    const purchase = await Promise.all([
-      axios.get('https://api.coinbase.com/v2/prices/BTC-USD/sell'),
-      axios.get('https://api.coinbase.com/v2/prices/ETH-USD/sell'),
+    const gempurchase = await Promise.all([
+      axios.get('https://api.gemini.com/v2/ticker/btcusd'),
+      axios.get('https://api.gemini.com/v2/ticker/ethusd'),
     ]);
-    const data = await Promise.all(purchase.map((r) => r.data));
-    coinbaseStore.seller = [];
-    data.forEach((crypto) => {
-      let price = crypto.data.amount;
-      let curr = crypto.data.base;
+    const gemdata = await Promise.all(gempurchase.map((r) => r.data));
+    gemdata.forEach((crypto) => {
+      let price = crypto.bid;
+      let curr = crypto.symbol;
+      curr = curr.slice(0, 3);
       let obj = {};
       obj.type = 'seller';
-      obj.source = 'coinbase';
+      obj.source = 'gemini';
       obj['name'] = curr;
       obj['price'] = price;
-      coinbaseStore.seller.push(obj);
+      coinbaseStore.buyer.push(obj);
+      let buyObj = {};
+      price = crypto.ask;
+      buyObj.type = 'buyer';
+      buyObj.source = 'gemini';
+      buyObj['name'] = curr;
+      buyObj['price'] = price;
+      coinbaseStore.buyer.push(buyObj);
     });
 
     setTimeout(() => {
-      sell();
-    }, 20000);
+      buy();
+    }, 5000);
   }
 
   buy();
-  sell();
 
   //error handling
 
@@ -95,7 +115,7 @@ const startServer = () => {
       });
       setTimeout(() => {
         broadcast();
-      }, 20000);
+      }, 5000);
     };
     broadcast();
   });
