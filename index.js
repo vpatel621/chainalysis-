@@ -22,9 +22,28 @@ const startServer = () => {
   };
   app.use(cors(corsOptions));
 
-  const coinbaseStore = { buyer: [] };
+  const coinbaseStore = { data: [] };
+  async function historicalData() {
+    coinbaseStore.historical = [];
+    const res = await axios.get(
+      'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30&interval=daily'
+    );
+    let { data } = res;
+    data.name = 'Bitcoin';
+    coinbaseStore.historical.push(data);
+    let res2 = await axios.get(
+      'https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=30&interval=daily'
+    );
+
+    res2.data.name = 'Ethereum';
+    coinbaseStore.historical.push(res2.data);
+    setTimeout(() => {
+      buy();
+    }, 86400000);
+  }
+
   async function buy() {
-    coinbaseStore.buyer = [];
+    coinbaseStore.data = [];
 
     const sellPurchase = await Promise.all([
       axios.get('https://api.coinbase.com/v2/prices/BTC-USD/sell'),
@@ -37,10 +56,10 @@ const startServer = () => {
       let curr = crypto.data.base;
       let obj = {};
       obj.type = 'seller';
-      obj.source = 'coinbase';
+      obj.source = 'Coinbase';
       obj['name'] = curr;
       obj['price'] = price;
-      coinbaseStore.buyer.push(obj);
+      coinbaseStore.data.push(obj);
     });
 
     const purchase = await Promise.all([
@@ -54,10 +73,10 @@ const startServer = () => {
       let curr = crypto.data.base;
       let obj = {};
       obj.type = 'buyer';
-      obj.source = 'coinbase';
+      obj.source = 'Coinbase';
       obj['name'] = curr;
       obj['price'] = price;
-      coinbaseStore.buyer.push(obj);
+      coinbaseStore.data.push(obj);
     });
 
     const gempurchase = await Promise.all([
@@ -71,26 +90,26 @@ const startServer = () => {
       curr = curr.slice(0, 3);
       let obj = {};
       obj.type = 'seller';
-      obj.source = 'gemini';
+      obj.source = 'Gemini';
       obj['name'] = curr;
       obj['price'] = price;
-      coinbaseStore.buyer.push(obj);
+      coinbaseStore.data.push(obj);
       let buyObj = {};
       price = crypto.ask;
       buyObj.type = 'buyer';
-      buyObj.source = 'gemini';
+      buyObj.source = 'Gemini';
       buyObj['name'] = curr;
       buyObj['price'] = price;
-      coinbaseStore.buyer.push(buyObj);
+      coinbaseStore.data.push(buyObj);
     });
-    coinbaseStore.buyer.sort((a, b) => a.price - b.price);
+    coinbaseStore.data.sort((a, b) => a.price - b.price);
     setTimeout(() => {
       buy();
     }, 5000);
   }
 
   buy();
-
+  historicalData();
   //error handling
 
   wss.on('connection', (ws) => {
@@ -104,7 +123,7 @@ const startServer = () => {
     ws.send('Hi there, I am a WebSocket server :)');
     ws.send(JSON.stringify(coinbaseStore));
     var broadcast = function () {
-      if (coinbaseStore.buyer.length === 8) {
+      if (coinbaseStore.data.length === 8) {
         var json = JSON.stringify(coinbaseStore);
 
         // wss.clients is an array of all connected clients
