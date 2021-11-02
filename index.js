@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import morgan from 'morgan';
 import axios from 'axios';
 import http from 'http';
 import { WebSocketServer } from 'ws';
@@ -10,11 +9,6 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 const startServer = () => {
-  app.use(express.json());
-  //For parsing application/x-www-form-urlencoded
-  app.use(express.urlencoded({ extended: true }));
-  app.use(morgan('dev'));
-
   const corsOptions = {
     origin: 'http://localhost:3000',
     credentials: true, //access-control-allow-credentials:true
@@ -22,21 +16,21 @@ const startServer = () => {
   };
   app.use(cors(corsOptions));
 
-  const coinbaseStore = { data: [] };
+  const coinbaseStore = { data: [], history = [] };
   async function historicalData() {
-    coinbaseStore.historical = [];
+    coinbaseStore.history = [];
     const res = await axios.get(
       'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30&interval=daily'
     );
     let { data } = res;
-    data.name = 'Bitcoin';
-    coinbaseStore.historical.push(data);
+    data.name = 'BTC';
+    coinbaseStore.history.push(data);
     let res2 = await axios.get(
       'https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=30&interval=daily'
     );
 
-    res2.data.name = 'Ethereum';
-    coinbaseStore.historical.push(res2.data);
+    res2.data.name = 'ETH';
+    coinbaseStore.history.push(res2.data);
     setTimeout(() => {
       buy();
     }, 86400000);
