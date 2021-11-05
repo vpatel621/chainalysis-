@@ -16,6 +16,9 @@
     "express": "^4.17.1",
     "sse-pubsub": "^1.4.1"
   },
+  "engines": {
+    "node": "15.1"
+  },
   "devDependencies": {
     "nodemon": "^2.0.14"
   }
