@@ -4,10 +4,12 @@ import { corsOptions } from './server/cors.js';
 
 import currentMarketPrices from './api/currentMarketPrices.js';
 import fetchHistoricalData from './api/historicalData.js';
-import {
-  useServerSentEventsMiddleware,
-  streamPrices,
-} from './server/sseMiddleware.js';
+// import {
+//   useServerSentEventsMiddleware,
+//   streamPrices,
+// } from './server/sseMiddleware.js';
+
+import { channel } from './api/currentMarketPrices.js';
 
 const app = express();
 export const cache = { data: [], history: [] };
@@ -18,7 +20,7 @@ const startServer = () => {
   currentMarketPrices(cache);
   fetchHistoricalData(cache);
 
-  app.get('/', useServerSentEventsMiddleware, streamPrices);
+  app.get('/', (req, res) => channel.subscribe(req, res));
 
   app.use(function (err, req, res, next) {
     if ((err.status = '401')) {
