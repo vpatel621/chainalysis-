@@ -8,8 +8,6 @@ export default async function fetchCoinbasePrices(cache) {
   ]);
   const sellData = await Promise.all(fetchSellData.map((r) => r.data));
 
-  //try to combine buy and ask for coinbase into 1 function
-
   const fetchBuyData = await Promise.all([
     axios.get('https://api.coinbase.com/v2/prices/BTC-USD/buy'),
     axios.get('https://api.coinbase.com/v2/prices/ETH-USD/buy'),

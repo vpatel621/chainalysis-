@@ -1,26 +1,24 @@
 import express from 'express';
 import cors from 'cors';
-import http from 'http';
+import { corsOptions } from './server/cors.js';
 
 import currentMarketPrices from './api/currentMarketPrices.js';
 import fetchHistoricalData from './api/historicalData.js';
-import webSocketServer from './server/websocketServer.js';
+import {
+  useServerSentEventsMiddleware,
+  streamPrices,
+} from './server/sseMiddleware.js';
 
 const app = express();
-const server = http.createServer(app);
+export const cache = { data: [], history: [] };
 
 const startServer = () => {
-  const corsOptions = {
-    origin: 'http://localhost:3000',
-    credentials: true, //access-control-allow-credentials:true
-    optionSuccessStatus: 200,
-  };
   app.use(cors(corsOptions));
 
-  const cache = { data: [], history: [] };
-  webSocketServer(server, cache);
   currentMarketPrices(cache);
   fetchHistoricalData(cache);
+
+  app.get('/', useServerSentEventsMiddleware, streamPrices);
 
   app.use(function (err, req, res, next) {
     if ((err.status = '401')) {
@@ -37,7 +35,7 @@ const startServer = () => {
 
   //starting our server on a port
   const PORT = process.env.PORT || 3030;
-  server.listen(process.env.PORT || 3030, () => {
+  const server = app.listen(process.env.PORT || 3030, () => {
     console.log(`Server started on port ${server.address().port} :)`);
   });
 };
