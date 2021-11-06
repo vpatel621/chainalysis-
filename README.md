@@ -2,7 +2,7 @@
 
 This web app allows you to monitor the prices of Bitcoin and Ethereum on Coinbase and Gemini Exchanges and look for the best deal to either buy or sell either currency.
 
-Check out https://brave-kirch-a9416d.netlify.app/ to check out the current prices of Bitcoin and Ethereum. out the app live.
+Vist https://brave-kirch-a9416d.netlify.app/ to see the current prices of Bitcoin and Ethereum and the app in action.
 
 This repository only contains the backend server. In order to see price information, you will need to download and install the following repository.
 https://github.com/vpatel621/chainalysis-frontend.git
